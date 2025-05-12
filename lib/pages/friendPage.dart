@@ -1,0 +1,166 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:league_better_client/api/betterClientApi.dart';
+import 'package:league_better_client/api/extensions/FriendService.dart';
+import 'package:league_better_client/models/Friend.dart';
+import 'package:league_better_client/models/Summoner.dart';
+
+class FriendListPage extends StatefulWidget {
+  const FriendListPage({super.key});
+
+  @override
+  State<FriendListPage> createState() => _FriendListPageState();
+}
+
+class _FriendListPageState extends State<FriendListPage> {
+  List<Friend> friends = [];
+  bool isLoading = true;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchFriends();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      fetchFriends();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); // Stop the timer when the page is disposed
+    super.dispose();
+  }
+
+  Future<void> fetchFriends() async {
+    print("Fetching friends...");
+    final fetchedFriends =
+        await BetterClientApi.instance
+            .getAllFriends(); // Fetch your friends list here
+    for (var friend in fetchedFriends) {
+      await friend.loadImages();
+      await friend.loadGameQueue();
+      isLoading = false;
+    }
+    setState(() {
+      friends = fetchedFriends;
+      isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (friends.isEmpty) {
+      return const Center(child: Text('No friends found.'));
+    }
+
+    // 🟢 Group friends by groupName
+    final Map<String, List<Friend>> grouped = {};
+    for (var friend in friends) {
+      grouped.putIfAbsent(friend.groupName, () => []).add(friend);
+    }
+
+    // 🟢 Sort group names: normal groups first, then those starting with '**'
+    final sortedGroupEntries =
+        grouped.entries.toList()..sort((a, b) {
+          final aStartsWithStars = a.key.startsWith('**');
+          final bStartsWithStars = b.key.startsWith('**');
+          if (aStartsWithStars && !bStartsWithStars) return 1;
+          if (!aStartsWithStars && bStartsWithStars) return -1;
+          return a.key.compareTo(b.key); // Alphabetical among same type
+        });
+
+    // sort friend in each group by availability, chat first
+    for (var entry in sortedGroupEntries) {
+      entry.value.sort((a, b) {
+        // Define custom order for availability
+        const availabilityOrder = {
+          'inGame': 2,
+          'championSelect': 2,
+          'chat': 1,
+          'away': 3,
+          'dnd': 4,
+          'offline': 5,
+        };
+
+        if (!availabilityOrder.containsKey(a.availability) ||
+            !availabilityOrder.containsKey(b.availability)) {
+          return 0; // If availability is not in the order, keep original order
+        }
+
+        // Compare availability first
+        int availabilityComparison = availabilityOrder[a.availability]!
+            .compareTo(availabilityOrder[b.availability]!);
+        if (availabilityComparison != 0) return availabilityComparison;
+
+        // If availability is the same, compare by gameName alphabetically
+        return a.gameName.compareTo(b.gameName);
+      });
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children:
+            sortedGroupEntries.map((entry) {
+              final onlineFriendsCount =
+                  entry.value
+                      .where((friend) => friend.availability != 'offline')
+                      .length;
+              final friendsCount = entry.value.length;
+              String groupName =
+                  """${entry.key.isEmpty ? 'Ungrouped' : entry.key} ($onlineFriendsCount/$friendsCount)""";
+
+              // 🟢 Remove '**' for display
+              if (groupName.startsWith('**')) {
+                groupName = groupName.replaceFirst('**', '');
+              }
+
+              final groupFriends = entry.value;
+
+              return Container(
+                width: 200,
+                margin: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        groupName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height:
+                          MediaQuery.of(context).size.height *
+                          0.7, // Make it scroll vertically
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: groupFriends.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: groupFriends[index].draw(),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+}
