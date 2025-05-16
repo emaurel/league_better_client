@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/betterClientApi.dart';
 import 'package:league_better_client/api/extensions/FriendService.dart';
+import 'package:league_better_client/api/websockets/testWebSocket.dart';
+import 'package:league_better_client/events/events.dart';
+import 'package:league_better_client/events/friendEvents.dart';
 import 'package:league_better_client/models/Friend.dart';
+import 'package:league_better_client/models/Queue.dart';
 import 'package:league_better_client/models/Summoner.dart';
 
 class FriendListPage extends StatefulWidget {
@@ -16,33 +21,67 @@ class FriendListPage extends StatefulWidget {
 class _FriendListPageState extends State<FriendListPage> {
   List<Friend> friends = [];
   bool isLoading = true;
-  late Timer _timer;
+  LcuWebSocketClient friendListSocketClient = LcuWebSocketClient();
 
   @override
   void initState() {
     super.initState();
     fetchFriends();
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      fetchFriends();
+    initFriendSocket();
+  }
+
+  void updateOneFriend(Friend friend) {
+    setState(() {
+      final index = friends.indexWhere((f) => f.id == friend.id);
+      if (index != -1) {
+        friends[index] = friend;
+      }
     });
   }
 
   @override
   void dispose() {
-    _timer.cancel(); // Stop the timer when the page is disposed
+    friendListSocketClient.disconnect();
     super.dispose();
   }
 
+  Future<void> initFriendSocket() async {
+    await friendListSocketClient.connect('OnJsonApiEvent_lol-chat_v1_friends');
+    friendListSocketClient.listen((event) async {
+      final allEventData = jsonDecode(event);
+      final eventData = allEventData[2];
+      final data = eventData["data"];
+      final eventType = eventData["eventType"];
+      print(eventType);
+      final friend = Friend.fromJson(data);
+      await friend.loadImages();
+      await friend.loadGameQueue();
+      if (eventType == 'Update') {
+        print('Friend updated: ${friend.name}');
+        updateOneFriend(friend);
+      } else if (eventType == 'Delete') {
+        setState(() {
+          friends.removeWhere((f) => f.id == friend.id);
+        });
+      } else if (eventType == 'Create') {
+        setState(() {
+          friends.add(friend);
+        });
+      }
+      
+    });
+
+  }
+
   Future<void> fetchFriends() async {
-    print("Fetching friends...");
     final fetchedFriends =
         await BetterClientApi.instance
             .getAllFriends(); // Fetch your friends list here
     for (var friend in fetchedFriends) {
       await friend.loadImages();
       await friend.loadGameQueue();
-      isLoading = false;
     }
+
     setState(() {
       friends = fetchedFriends;
       isLoading = false;

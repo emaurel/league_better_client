@@ -6,9 +6,12 @@
     "configurations": [
         
         {
-            "name": "league_better_client",
+            "name": "league_better_client_windows",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "flutterMode": "debug",
+            
+
         },
         {
             "name": "league_better_client (profile mode)",

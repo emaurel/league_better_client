@@ -1,13 +1,32 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/extensions/FriendService.dart';
+import 'package:league_better_client/api/websockets/testWebSocket.dart';
+import 'package:league_better_client/events/events.dart';
+import 'package:league_better_client/events/lobbyEvents.dart';
 import 'package:league_better_client/models/Summoner.dart';
 import 'package:league_better_client/api/exports.dart';
 import 'package:league_better_client/pages/friendPage.dart';
 import 'package:league_better_client/pages/inventoryPage.dart';
+import 'package:league_better_client/pages/lobbyPage.dart';
 
 void main() async {
   await BetterClientApi.instance.init();
-  runApp(const MyApp());
+   FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // Optionally report to server/analytics
+  };
+
+  runZonedGuarded(() {
+    runApp(MyApp());
+  },
+   zoneValues: {
+    'userId': 42,
+  }, (error, stackTrace) {
+    print('Caught by runZonedGuarded: $error');
+    Zone.current['userId'];
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -40,23 +59,16 @@ class _HomePageState extends State<HomePage>
 
   // Cache the pages (so they don't rebuild)
   List<Widget> get _pages => [
-    _buildHomePage(), // ✅ Always fresh build
-    const InventoryPage(),
+    _buildHomePage(), 
+    const LobbyPage(),
     const FriendListPage(),
+    const InventoryPage(),
     const Center(
       child: Text('Stats Page (Coming Soon)', style: TextStyle(fontSize: 24)),
     ),
   ];
 
-  Summoner summoner = Summoner(
-    accountId: '',
-    summonerId: '',
-    gameName: '',
-    puuid: '',
-    tagLine: '',
-    profileIconId: '',
-    summonerLevel: 0,
-  );
+  Summoner summoner = Summoner.empty();
 
   Future<void> fetchSummoner() async {
     await BetterClientApi.instance.getAllFriends();
@@ -75,7 +87,7 @@ class _HomePageState extends State<HomePage>
     super.initState();
     fetchSummoner();
 
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() {
@@ -83,6 +95,11 @@ class _HomePageState extends State<HomePage>
         });
       }
     });
+    eventBus.onEvent.listen((event) {
+    if (event is JoinLobbyEvent) {
+      _tabController.animateTo(1);
+    }
+  });
 
     
   }
@@ -119,8 +136,9 @@ class _HomePageState extends State<HomePage>
           controller: _tabController,
           tabs: const [
             Tab(icon: Icon(Icons.home), text: 'Home'),
-            Tab(icon: Icon(Icons.inventory), text: 'Inventory'),
+            Tab(icon: Icon(Icons.play_arrow), text: 'Play'),
             Tab(icon: Icon(Icons.group), text: 'Friends'),
+            Tab(icon: Icon(Icons.inventory), text: 'Inventory'),
             Tab(icon: Icon(Icons.assessment), text: 'Stats'),
           ],
         ),

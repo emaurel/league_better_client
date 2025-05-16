@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-
+enum RequestType { GET, POST, PUT, DELETE }
 
 class LockfileInfo {
   final String password;
@@ -23,6 +23,7 @@ Future<LockfileInfo?> readLockfile() async {
     return null;
   }
 }
+
 class BetterClientApi {
   static final BetterClientApi _instance = BetterClientApi._internal();
 
@@ -45,30 +46,62 @@ class BetterClientApi {
     await getSummonerInfo();
   }
 
-  Future<Map<String, dynamic>?> getSummonerInfo() async {
+  Future<HttpClientResponse> makeRequest(
+    String path,
+    RequestType type, {
+    dynamic body, bool showDebug = false,
+  }) async {
     if (lockfile == null) {
-      print('Lockfile not found. please initialize the client first.');
-      return null;
+      throw ('Lockfile not found. please initialize the client first.');
     }
     final client = HttpClient();
     client.badCertificateCallback = (cert, host, port) => true;
 
-    final uri = Uri.parse(
-      'https://127.0.0.1:${lockfile!.port}/lol-summoner/v1/current-summoner',
-    );
-    print('Requesting: $uri');
-    final request = await client.getUrl(uri);
+    final uri = Uri.parse('https://127.0.0.1:${lockfile!.port}/$path');
+    if (showDebug) {
+      print('Requesting: $uri');
+    }
+    HttpClientRequest request;
+    switch (type) {
+      case RequestType.GET:
+        request = await client.getUrl(uri);
+
+      case RequestType.POST:
+        request = await client.postUrl(uri);
+
+      case RequestType.PUT:
+        request = await client.putUrl(uri);
+
+      case RequestType.DELETE:
+        request = await client.deleteUrl(uri);
+    }
+
     String basicAuth =
         'Basic ${base64Encode(utf8.encode('riot:${lockfile!.password}'))}';
     request.headers.set(HttpHeaders.authorizationHeader, basicAuth);
+    if (body != null) {
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(body));
+    }
 
     final response = await request.close();
+    if (showDebug) {
+      print('Response status: ${response.statusCode}');
+      response.transform(utf8.decoder).listen((contents) {
+        print('Response body: $contents');
+      });
+    }
+    return response;
+  }
 
-    print('Response status: ${response.statusCode}');
+  Future<Map<String, dynamic>?> getSummonerInfo() async {
+    final response = await makeRequest(
+      'lol-summoner/v1/current-summoner',
+      RequestType.GET,
+    );
 
     if (response.statusCode == 200) {
       final responseBody = await response.transform(utf8.decoder).join();
-      print(jsonDecode(responseBody));
       summonerId = jsonDecode(responseBody)['summonerId'].toString();
       return jsonDecode(responseBody);
     } else {

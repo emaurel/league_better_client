@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:league_better_client/api/betterClientApi.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -22,12 +23,12 @@ extension ImageService on BetterClientApi {
     final ddragonVersionUri = Uri.parse(
       'https://ddragon.leagueoflegends.com/api/versions.json',
     );
-    print('Requesting: $ddragonVersionUri');
+    //print('Requesting: $ddragonVersionUri');
     final request = await client.getUrl(ddragonVersionUri);
 
     final response = await request.close();
 
-    print('Response status: ${response.statusCode}');
+    //print('Response status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final responseBody = await response.transform(utf8.decoder).join();
@@ -36,17 +37,17 @@ extension ImageService on BetterClientApi {
       final iconUri = Uri.parse(
         'https://ddragon.leagueoflegends.com/cdn/$ddragonVersion/img/profileicon/$iconId.png',
       );
-      print('Requesting: $iconUri');
+      //print('Requesting: $iconUri');
       final iconRequest = await client.getUrl(iconUri);
       final iconResponse = await iconRequest.close();
-      print('Icon response status: ${iconResponse.statusCode}');
+      //print('Icon response status: ${iconResponse.statusCode}');
       if (iconResponse.statusCode == 200) {
         final bytes = await consolidateHttpClientResponseBytes(iconResponse);
         final file = await createFileWithFolders(
           "assets/profileicon/$iconId.png",
         );
         await file.writeAsBytes(bytes);
-        print('Icon saved to: ${file.path}');
+        //print('Icon saved to: ${file.path}');
         return Image.memory(bytes);
       } else {
         print('Icon request failed with status: ${iconResponse.statusCode}.');
@@ -92,31 +93,7 @@ extension ImageService on BetterClientApi {
     if (localImage != null) {
       return localImage;
     }
-
-    if (lockfile == null) {
-      print('Lockfile not found.');
-      return Image.asset(
-        'assets/placeholder.png',
-        width: 100,
-        height: 100,
-      ); // fallback
-    }
-
-    final client = HttpClient();
-    client.badCertificateCallback = (cert, host, port) => true;
-
-    final uri = Uri.parse('https://127.0.0.1:${lockfile!.port}$path');
-    final request = await client.getUrl(uri);
-
-    print('Requesting: $uri');
-
-    String basicAuth =
-        'Basic ${base64Encode(utf8.encode('riot:${lockfile!.password}'))}';
-    request.headers.set(HttpHeaders.authorizationHeader, basicAuth);
-
-    final response = await request.close();
-
-    print('Response status: ${response.statusCode}');
+    final response = await makeRequest(path, RequestType.GET);
 
     if (response.statusCode == 200) {
       final bytes = await consolidateHttpClientResponseBytes(response);
@@ -126,6 +103,21 @@ extension ImageService on BetterClientApi {
     } else {
       print('Failed with status: ${response.statusCode}');
       return Image.asset('assets/placeholder.png');
+    }
+  }
+
+  Future<SvgPicture> getPositionIcon(String position) async {
+    if (position == "null") {
+      position = "LANE";
+    }
+    if (await fileExists("assets/icons/position/$position.svg")) {
+      return SvgPicture.file(
+        File("assets/icons/position/$position.svg"),
+        width: 40,
+        fit: BoxFit.contain,
+      );
+    } else {
+      throw ('Image not found at assets/icons/position/$position.svg');
     }
   }
 }

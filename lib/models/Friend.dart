@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/betterClientApi.dart';
 import 'package:league_better_client/api/exports.dart';
+import 'package:league_better_client/events/events.dart';
+import 'package:league_better_client/events/friendEvents.dart';
+import 'package:league_better_client/events/lobbyEvents.dart';
 import 'package:league_better_client/models/Queue.dart';
 
 class FriendInfo {
@@ -135,8 +138,8 @@ class FriendInfo {
       damageSkinId: (json['damageSkinId'] ?? "") as String,
       gameId: (json['gameId'] ?? "") as String,
       gameMode: (json['gameMode'] ?? "") as String,
-      gameQueueType: json['gameQueueType'] as String,
-      gameStatus: json['gameStatus'] as String,
+      gameQueueType: (json['gameQueueType'] ?? "") as String,
+      gameStatus: (json['gameStatus'] ?? "") as String,
       iconOverride: (json['iconOverride'] ?? "") as String,
       isObservable: (json['isObservable'] ?? "") as String,
       legendaryMasteryScore: (json['legendaryMasteryScore'] ?? "") as String,
@@ -163,11 +166,9 @@ class FriendInfo {
       timeStamp: (json["timeStamp"] ?? '') as String,
     );
     if (res.pty != "") {
-      print("pty: ${res.pty}");
       var ptyJson = jsonDecode(res.pty!);
       res.partyMaxPlayer = (ptyJson['maxPlayers'] ?? 0);
       res.partyNbPlayers = (ptyJson['summoners'] ?? []).length;
-      print(ptyJson['summoners']);
       res.summoners = List<int>.from((ptyJson['summoners']) ?? []);
       res.partyId = ptyJson['partyId'] ?? '';
     }
@@ -276,7 +277,6 @@ class Friend {
     summonerIcon = await BetterClientApi.instance.getProfileIcon(
       icon.toString(),
     );
-    print("images loaded");
     summonerIcon = Image(image: summonerIcon.image, width: 50, height: 50);
   }
 
@@ -389,6 +389,8 @@ class Friend {
               ElevatedButton(
                 onPressed: () {
                   BetterClientApi.instance.joinLobby(lol.partyId);
+                  eventBus.fire(JoinLobbyEvent(lol.gameQueue));
+                  eventBus.fire(FriendListUpdateEvent());
                 },
                 child: const Text("Join Party"),
               ),
