@@ -1,33 +1,46 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/extensions/FriendService.dart';
-import 'package:league_better_client/api/websockets/apiWebSocket.dart';
-import 'package:league_better_client/closeClient.dart';
 import 'package:league_better_client/events/events.dart';
 import 'package:league_better_client/events/lobbyEvents.dart';
 import 'package:league_better_client/models/Summoner.dart';
 import 'package:league_better_client/api/exports.dart';
 import 'package:league_better_client/pages/friendPage.dart';
+import 'package:league_better_client/pages/gamePage.dart';
 import 'package:league_better_client/pages/inventoryPage.dart';
-import 'package:league_better_client/pages/lobbyPage.dart';
+
+import 'package:window_size/window_size.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await BetterClientApi.instance.init();
-   FlutterError.onError = (FlutterErrorDetails details) {
+  FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     // Optionally report to server/analytics
   };
 
-  runZonedGuarded(() {
-    runApp(MyApp());
-  },
-   zoneValues: {
-    'userId': 42,
-  }, (error, stackTrace) {
-    print('Caught by runZonedGuarded: $error');
-    Zone.current['userId'];
-  });
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    setWindowTitle('League Champ Select');
+    setWindowMinSize(const Size(1000, 1000));
+    setWindowMaxSize(const Size(1800, 1000));
+    setWindowFrame(
+      const Rect.fromLTWH(100, 20, 1600, 800),
+    ); // X, Y, width, height
+  }
+
+  runZonedGuarded(
+    () {
+      runApp(MyApp());
+    },
+    zoneValues: {'userId': 42},
+    (error, stackTrace) {
+      print('Caught by runZonedGuarded: $error');
+      Zone.current['userId'];
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -60,8 +73,8 @@ class _HomePageState extends State<HomePage>
 
   // Cache the pages (so they don't rebuild)
   List<Widget> get _pages => [
-    _buildHomePage(), 
-    const LobbyPage(),
+    _buildHomePage(),
+    const GamePage(),
     const FriendListPage(),
     const InventoryPage(),
     const Center(
@@ -97,12 +110,10 @@ class _HomePageState extends State<HomePage>
       }
     });
     eventBus.onEvent.listen((event) {
-    if (event is JoinLobbyEvent) {
-      _tabController.animateTo(1);
-    }
-  });
-
-    
+      if (event is JoinLobbyEvent) {
+        _tabController.animateTo(1);
+      }
+    });
   }
 
   Widget _buildHomePage() {

@@ -9,6 +9,7 @@ import 'package:league_better_client/api/extensions/matchmakingService.dart';
 import 'package:league_better_client/api/extensions/summonerService.dart';
 import 'package:league_better_client/api/websockets/apiWebSocket.dart';
 import 'package:league_better_client/closeClient.dart';
+import 'package:league_better_client/events/champSelectEvents.dart';
 import 'package:league_better_client/events/events.dart';
 import 'package:league_better_client/events/lobbyEvents.dart';
 import 'package:league_better_client/events/matchmakingEvents.dart';
@@ -28,7 +29,6 @@ class LobbyPage extends StatefulWidget {
 
 class _LobbyPageState extends State<LobbyPage> {
   late StreamSubscription _joinLobbySubscription;
-  late StreamSubscription _matchmakingSubscription;
 
   Lobby? lobby;
   Queue? queue;
@@ -137,7 +137,6 @@ class _LobbyPageState extends State<LobbyPage> {
   @override
   void dispose() {
     _joinLobbySubscription.cancel();
-    _matchmakingSubscription.cancel();
     _friendListSocketSubscription?.cancel();
     super.dispose();
   }
@@ -238,7 +237,7 @@ class _LobbyPageState extends State<LobbyPage> {
                 onPressed: () {
                   if (lobby!.gameConfig.isCustom) {
                     BetterClientApi.instance.startCustomGame();
-                    eventBus.fire(MatchmakingStartEvent());
+                    eventBus.fire(ChampSelectStartEvent());
                   } else {
                     BetterClientApi.instance.matchmakingStart();
                   }

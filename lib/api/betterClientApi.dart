@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-enum RequestType { GET, POST, PUT, DELETE }
+enum RequestType { GET, POST, PUT, DELETE, PATCH }
 
 class LockfileInfo {
   final String password;
@@ -74,6 +74,9 @@ class BetterClientApi {
 
       case RequestType.DELETE:
         request = await client.deleteUrl(uri);
+
+      case RequestType.PATCH:
+        request = await client.patchUrl(uri);
     }
 
     String basicAuth =
