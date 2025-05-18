@@ -62,7 +62,7 @@ class Lobby {
       popularChampions: json['popularChampions'],
       restrictions: (json['restrictions'] ?? []),
       scarcePositions: List<String>.from(json['scarcePositions']),
-      warnings: json['warnings'],
+      warnings: (json['warnings'] ?? []),
     );
     res.name = "${res.gameConfig.mapName} - ${res.gameConfig.gameMode} - ${res.partyType} (${res.members.length}/${res.gameConfig.maxLobbySize})";
     return res;

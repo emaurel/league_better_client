@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/betterClientApi.dart';
 import 'package:league_better_client/api/exports.dart';
+import 'package:league_better_client/api/extensions/customGameService.dart';
 import 'package:league_better_client/api/extensions/matchmakingService.dart';
 import 'package:league_better_client/api/extensions/summonerService.dart';
+import 'package:league_better_client/api/websockets/apiWebSocket.dart';
+import 'package:league_better_client/closeClient.dart';
 import 'package:league_better_client/events/events.dart';
 import 'package:league_better_client/events/lobbyEvents.dart';
 import 'package:league_better_client/events/matchmakingEvents.dart';
@@ -25,42 +29,20 @@ class LobbyPage extends StatefulWidget {
 class _LobbyPageState extends State<LobbyPage> {
   late StreamSubscription _joinLobbySubscription;
   late StreamSubscription _matchmakingSubscription;
+
   Lobby? lobby;
   Queue? queue;
-  late Timer _timer;
-  late Timer _matchmakingTimer;
-  bool isMatchmaking = false;
-  bool isMatchmakingFound = false;
+  MatchmakingSearch? matchmaking;
+  final LcuWebSocketClient _lobbySocketClient = LcuWebSocketClient();
 
+  StreamSubscription<dynamic>? _friendListSocketSubscription;
   @override
   void initState() {
     super.initState();
     _refreshLobby();
     _checkMatchmaking();
+    _initLobbySocket();
 
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _refreshLobby());
-    _matchmakingTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => _checkMatchmaking(),
-    );
-    _matchmakingTimer.cancel();
-    _matchmakingSubscription = eventBus.onEvent.listen((event) {
-      if (event is MatchmakingStartEvent) {
-        _changeMatchmakingState(true);
-      } else if (event is MatchmakingCancelledEvent ||
-          event is MatchmakingErrorEvent) {
-        _changeMatchmakingState(false);
-      } else if (event is MatchmakingFoundEvent) {
-        setState(() {
-          isMatchmakingFound = true;
-        });
-        print('Found a game');
-      } else if (event is MatchmakingStopEvent) {
-        setState(() {
-          isMatchmakingFound = false;
-        });
-      }
-    });
     _joinLobbySubscription = eventBus.onEvent.listen((event) {
       if (event is LobbyEvent) {
         _refreshLobby();
@@ -73,30 +55,90 @@ class _LobbyPageState extends State<LobbyPage> {
     });
   }
 
-  Future<void> _changeMatchmakingState(bool value) async {
-    var temp = isMatchmaking;
+  Future<void> updateLobby(Lobby lobby) async {
     setState(() {
-      isMatchmaking = value;
+      this.lobby = lobby;
     });
-    if (value && !temp) {
-      await BetterClientApi.instance.matchmakingStart();
-      Timer.periodic(const Duration(seconds: 2), (_) => _checkMatchmaking());
-    } else if (!value && temp) {
-      await BetterClientApi.instance.matchmakingStop();
-      _matchmakingTimer.cancel();
+  }
+
+  String getMatchmakingSearchState() {
+    if (lobby!.gameConfig.isCustom) {
+      return 'Start game';
     }
-    if (!value) {
+    if (matchmaking == null) {
+      return 'Find game';
+    }
+    switch (matchmaking!.searchState) {
+      case MatchmakingSearchState.searching:
+        return 'In queue';
+      case MatchmakingSearchState.found:
+        return 'Found';
+      case MatchmakingSearchState.invalid:
+        return 'Find game';
+      case MatchmakingSearchState.error:
+        return 'Error';
+    }
+  }
+
+  Future<void> _socketOnLobbyEvent(
+    Map<String, dynamic> data,
+    String eventType,
+  ) async {
+    final lobby = Lobby.fromJson(data);
+    if (eventType == 'Update') {
+      updateLobby(lobby);
+    } else if (eventType == 'Delete') {
+      eventBus.fire(QuitLobbyEvent());
+    } else if (eventType == 'Create') {
+      updateLobby(lobby);
+    }
+  }
+
+  Future<void> _socketOnMatchmakingEvent(
+    Map<String, dynamic> data,
+    String eventType,
+  ) async {
+    final matchmaking = MatchmakingSearch.fromJson(data);
+    if (eventType == 'Update') {
       setState(() {
-        isMatchmakingFound = false;
+        this.matchmaking = matchmaking;
+      });
+    } else if (eventType == 'Delete') {
+      setState(() {
+        this.matchmaking = null;
+      });
+    } else if (eventType == 'Create') {
+      setState(() {
+        this.matchmaking = matchmaking;
       });
     }
+  }
+
+  Future<void> _initLobbySocket() async {
+    await _lobbySocketClient.connect('OnJsonApiEvent_lol-lobby_v2_lobby');
+    _friendListSocketSubscription = _lobbySocketClient.listen((event) async {
+      final allEventData = jsonDecode(event);
+      final eventData = allEventData[2];
+      minimizeLeagueClient();
+      print("babage");
+
+      final data = eventData["data"];
+      final eventType = eventData["eventType"];
+      final uri = eventData["uri"];
+      if (uri == "/lol-lobby/v2/lobby") {
+        await _socketOnLobbyEvent(data, eventType);
+      }
+      if (uri == "/lol-lobby/v2/lobby/matchmaking/search-state") {
+        await _socketOnMatchmakingEvent(data, eventType);
+      }
+    });
   }
 
   @override
   void dispose() {
     _joinLobbySubscription.cancel();
     _matchmakingSubscription.cancel();
-    _timer.cancel();
+    _friendListSocketSubscription?.cancel();
     super.dispose();
   }
 
@@ -194,7 +236,12 @@ class _LobbyPageState extends State<LobbyPage> {
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
                 onPressed: () {
-                  BetterClientApi.instance.matchmakingStart();
+                  if (lobby!.gameConfig.isCustom) {
+                    BetterClientApi.instance.startCustomGame();
+                    eventBus.fire(MatchmakingStartEvent());
+                  } else {
+                    BetterClientApi.instance.matchmakingStart();
+                  }
                   eventBus.fire(MatchmakingStartEvent());
                 },
                 style: ElevatedButton.styleFrom(
@@ -204,10 +251,11 @@ class _LobbyPageState extends State<LobbyPage> {
                   ), // Bigger button
                   textStyle: const TextStyle(fontSize: 50), // Bigger text
                 ),
-                child: Text(!isMatchmaking ? 'FIND MATCH' : 'IN QUEUE'),
+                child: Text((getMatchmakingSearchState())),
               ),
             ),
-          if (isMatchmakingFound)
+          if (matchmaking != null &&
+              matchmaking!.searchState == MatchmakingSearchState.found)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
@@ -225,7 +273,8 @@ class _LobbyPageState extends State<LobbyPage> {
                 child: const Text('Accept'),
               ),
             ),
-          if (isMatchmakingFound)
+          if (matchmaking != null &&
+              matchmaking!.searchState == MatchmakingSearchState.found)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(

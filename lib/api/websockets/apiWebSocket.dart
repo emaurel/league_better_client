@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -40,7 +41,7 @@ class LcuWebSocketClient {
     _channel!.sink.add(message);
   }
 
-  void listen(void Function(dynamic) onMessage) {
-    _channel!.stream.listen(onMessage);
+  StreamSubscription<dynamic> listen(void Function(dynamic) onMessage) {
+    return _channel!.stream.listen(onMessage);
   }
 }

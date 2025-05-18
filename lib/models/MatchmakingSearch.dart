@@ -11,6 +11,7 @@ import 'package:league_better_client/models/ReadyCheck.dart';
 enum MatchmakingSearchState {
   searching,
   found,
+  invalid,
   error;
 
   String get name {
@@ -21,6 +22,8 @@ enum MatchmakingSearchState {
         return 'Found';
       case MatchmakingSearchState.error:
         return 'Error';
+      case MatchmakingSearchState.invalid:
+        return 'Invalid';
     }
   }
 
@@ -32,6 +35,8 @@ enum MatchmakingSearchState {
         return MatchmakingSearchState.found;
       case 'Error':
         return MatchmakingSearchState.error;
+      case 'Invalid':
+        return MatchmakingSearchState.invalid;
       default:
         throw Exception('Unknown state: $state');
     }

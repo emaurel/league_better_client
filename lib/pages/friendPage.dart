@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/betterClientApi.dart';
 import 'package:league_better_client/api/extensions/FriendService.dart';
-import 'package:league_better_client/api/websockets/testWebSocket.dart';
+import 'package:league_better_client/api/websockets/apiWebSocket.dart';
 import 'package:league_better_client/events/events.dart';
 import 'package:league_better_client/events/friendEvents.dart';
 import 'package:league_better_client/models/Friend.dart';
@@ -21,13 +21,14 @@ class FriendListPage extends StatefulWidget {
 class _FriendListPageState extends State<FriendListPage> {
   List<Friend> friends = [];
   bool isLoading = true;
-  LcuWebSocketClient friendListSocketClient = LcuWebSocketClient();
+  LcuWebSocketClient _friendSocketClient = LcuWebSocketClient();
+  StreamSubscription<dynamic>? _friendListSocketSubscription;
 
   @override
   void initState() {
     super.initState();
     fetchFriends();
-    initFriendSocket();
+    _initFriendSocket();
   }
 
   void updateOneFriend(Friend friend) {
@@ -41,23 +42,22 @@ class _FriendListPageState extends State<FriendListPage> {
 
   @override
   void dispose() {
-    friendListSocketClient.disconnect();
+    _friendListSocketSubscription?.cancel();
+    _friendSocketClient.disconnect();
     super.dispose();
   }
 
-  Future<void> initFriendSocket() async {
-    await friendListSocketClient.connect('OnJsonApiEvent_lol-chat_v1_friends');
-    friendListSocketClient.listen((event) async {
+  Future<void> _initFriendSocket() async {
+    await _friendSocketClient.connect('OnJsonApiEvent_lol-chat_v1_friends');
+    _friendListSocketSubscription = _friendSocketClient.listen((event) async {
       final allEventData = jsonDecode(event);
       final eventData = allEventData[2];
       final data = eventData["data"];
       final eventType = eventData["eventType"];
-      print(eventType);
       final friend = Friend.fromJson(data);
       await friend.loadImages();
       await friend.loadGameQueue();
       if (eventType == 'Update') {
-        print('Friend updated: ${friend.name}');
         updateOneFriend(friend);
       } else if (eventType == 'Delete') {
         setState(() {

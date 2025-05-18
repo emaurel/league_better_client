@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:league_better_client/api/extensions/FriendService.dart';
-import 'package:league_better_client/api/websockets/testWebSocket.dart';
+import 'package:league_better_client/api/websockets/apiWebSocket.dart';
+import 'package:league_better_client/closeClient.dart';
 import 'package:league_better_client/events/events.dart';
 import 'package:league_better_client/events/lobbyEvents.dart';
 import 'package:league_better_client/models/Summoner.dart';
