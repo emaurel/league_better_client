@@ -107,4 +107,25 @@ class Summoner {
       ],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'accountId': accountId,
+      'displayName': displayName,
+      'gameName': gameName,
+      'internalName': internalName,
+      'nameChangeFlag': nameChangeFlag,
+      'percentCompleteForNextLevel': percentCompleteForNextLevel,
+      'privacy': privacy,
+      'profileIconId': profileIconId,
+      'puuid': puuid,
+      'rerollPoints': rerollPoints.toJson(),
+      'summonerId': summonerId,
+      'summonerLevel': summonerLevel,
+      'tagLine': tagLine,
+      'unnamed': unnamed,
+      'xpSinceLastLevel': xpSinceLastLevel,
+      'xpUntilNextLevel': xpUntilNextLevel,
+    };
+  }
 }

@@ -1,5 +1,3 @@
-
-
 class MatchmakingSearchError {
   int? id;
   String? errorType;
@@ -23,5 +21,15 @@ class MatchmakingSearchError {
       penaltyTimeRemaining: json['penaltyTimeRemaining']?.toDouble(),
       message: json['message'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'errorType': errorType,
+      'penalizedSummonerId': penalizedSummonerId,
+      'penaltyTimeRemaining': penaltyTimeRemaining,
+      'message': message,
+    };
   }
 }

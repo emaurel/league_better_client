@@ -1,6 +1,3 @@
-
-
-
 import 'package:league_better_client/models/GameTypeConfig.dart';
 import 'package:league_better_client/models/QueueRewards.dart';
 
@@ -137,5 +134,50 @@ class Queue {
       spectatorEnabled: (json['spectatorEnabled'] as bool?) ?? false,
       type: (json['type'] as String?) ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'allowablePremadeSizes': allowablePremadeSizes,
+      'areFreeChampionsAllowed': areFreeChampionsAllowed,
+      'assetMutator': assetMutator,
+      'category': category,
+      'championsRequiredToPlay': championsRequiredToPlay,
+      'description': description,
+      'detailedDescription': detailedDescription,
+      'gameMode': gameMode,
+      'gameSelectCategory': gameSelectCategory,
+      'gameSelectModeGroup': gameSelectModeGroup,
+      'gameSelectPriority': gameSelectPriority,
+      'gameTypeConfig': gameTypeConfig.toJson(),
+      'hidePlayerPosition': hidePlayerPosition,
+      'id': id,
+      'isCustom': isCustom,
+      'isRanked': isRanked,
+      'isSkillTreeQueue': isSkillTreeQueue,
+      'isTeamBuilderManaged': isTeamBuilderManaged,
+      'isVisible': isVisible,
+      'lastToggledOffTime': lastToggledOffTime,
+      'lastToggledOnTime': lastToggledOnTime,
+      'mapId': mapId,
+      'maxDivisionForPremadeSize2': maxDivisionForPremadeSize2,
+      'maxLobbySpectatorCount': maxLobbySpectatorCount,
+      'maxTierForPremadeSize2': maxTierForPremadeSize2,
+      'maximumParticipantListSize': maximumParticipantListSize,
+      'minLevel': minLevel,
+      'minimumParticipantListSize': minimumParticipantListSize,
+      'name': name,
+      'numPlayersPerTeam': numPlayersPerTeam,
+      'numberOfTeamsInLobby': numberOfTeamsInLobby,
+      'queueAvailability': queueAvailability,
+      'queueRewards': queueRewards.toJson(),
+      'removalFromGameAllowed': removalFromGameAllowed,
+      'removalFromGameDelayMinutes': removalFromGameDelayMinutes,
+      'shortName': shortName,
+      'showPositionSelector': showPositionSelector,
+      'showQuickPlaySlotSelection': showQuickPlaySlotSelection,
+      'spectatorEnabled': spectatorEnabled,
+      'type': type,
+    };
   }
 }

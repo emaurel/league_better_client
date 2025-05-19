@@ -1,8 +1,5 @@
-
-
-
 class Rental {
-  int endDate;  
+  int endDate;
   int purchaseDate;
   bool rented;
   int winCountRemaining;
@@ -23,5 +20,12 @@ class Rental {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'endDate': endDate,
+      'purchaseDate': purchaseDate,
+      'rented': rented,
+      'winCountRemaining': winCountRemaining,
+    };
+  }
 }
-

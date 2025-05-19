@@ -89,10 +89,36 @@ class Champion {
     );
   }
 
-
   Future<void> loadImages() async {
     baseLoadScreen = await client.getImageFromPath(baseLoadScreenPath);
     baseSplash = await client.getImageFromPath(baseSplashPath);
     squarePortrait = await client.getImageFromPath(squarePortraitPath);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'active': active,
+      'alias': alias,
+      'banVoPath': banVoPath,
+      'baseLoadScreenPath': baseLoadScreenPath,
+      'baseSplashPath': baseSplashPath,
+      'botEnabled': botEnabled,
+      'chooseVoPath': chooseVoPath,
+      'disabledQueues': disabledQueues,
+      'freeToPlay': freeToPlay,
+      'id': id,
+      'name': name,
+      'ownership': ownership.toJson(),
+      'passive': passive.toJson(),
+      'purchased': purchased,
+      'rankedPlayEnabled': rankedPlayEnabled,
+      'roles': roles,
+      'skins': skins.map((e) => e.toJson()).toList(),
+      'spells': spells.map((e) => e.toJson()).toList(),
+      'squarePortraitPath': squarePortraitPath,
+      'stingerSfxPath': stingerSfxPath,
+      'tacticalInfo': tacticalInfo.toJson(),
+      'title': title,
+    };
   }
 }

@@ -1,4 +1,3 @@
-
 import 'Skin.dart';
 
 class QuestSkinInfo {
@@ -32,11 +31,26 @@ class QuestSkinInfo {
       name: json['name'] ?? '',
       productType: json['productType'] ?? '',
       splashPath: json['splashPath'] ?? '',
-      tiers: (json['tiers'] as List<dynamic>)
-          .map((tier) => Skin.fromJson(tier))
-          .toList(),
+      tiers:
+          (json['tiers'] as List<dynamic>)
+              .map((tier) => Skin.fromJson(tier))
+              .toList(),
       tilePath: json['tilePath'] ?? '',
       incenteredSplashPath: json['incenteredSplashPath'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'collectionCardPath': collectionCardPath,
+      'collectionDescription': collectionDescription,
+      'descriptionInfo': descriptionInfo,
+      'name': name,
+      'productType': productType,
+      'splashPath': splashPath,
+      'tiers': tiers.map((tier) => tier.toJson()).toList(),
+      'tilePath': tilePath,
+      'incenteredSplashPath': incenteredSplashPath,
+    };
   }
 }

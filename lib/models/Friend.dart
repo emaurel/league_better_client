@@ -172,8 +172,52 @@ class FriendInfo {
       res.summoners = List<int>.from((ptyJson['summoners']) ?? []);
       res.partyId = ptyJson['partyId'] ?? '';
     }
-    
+
     return res;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'bannerIdSelected': bannerIdSelected,
+      'challengeCrystalLevel': challengeCrystalLevel,
+      'challengePoints': challengePoints,
+      'challengeTokensSelected': challengeTokensSelected,
+      'championId': championId,
+      'companionId': companionId,
+      'damageSkinId': damageSkinId,
+      'gameId': gameId,
+      'gameMode': gameMode,
+      'gameQueueType': gameQueueType,
+      'gameStatus': gameStatus,
+      'iconOverride': iconOverride,
+      'isObservable': isObservable,
+      'legendaryMasteryScore': legendaryMasteryScore,
+      'level': level,
+      'mapId': mapId,
+      'mapSkinId': mapSkinId,
+      'playerTitleSelected': playerTitleSelected,
+      'profileIcon': profileIcon,
+      'pty': pty,
+      'puuid': puuid,
+      'queueId': queueId,
+      'rankedLeagueDivision': rankedLeagueDivision,
+      'rankedLeagueQueue': rankedLeagueQueue,
+      'rankedLeagueTier': rankedLeagueTier,
+      'rankedLosses': rankedLosses,
+      'rankedPrevSeasonDivision': rankedPrevSeasonDivision,
+      'rankedPrevSeasonTier': rankedPrevSeasonTier,
+      'rankedSplitRewardLevel': rankedSplitRewardLevel,
+      'rankedWins': rankedWins,
+      'regalia': regalia,
+      'skinVariant': skinVariant,
+      'skinname': skinname,
+      'timeStamp': timeStamp,
+      'partyId': partyId,
+      'partyMaxPlayer': partyMaxPlayer,
+      'partyNbPlayers': partyNbPlayers,
+      'summoners': summoners,
+      'gameQueue': gameQueue?.toJson(),
+    };
   }
 }
 
@@ -300,7 +344,7 @@ class Friend {
       case 'away': // Idle
         return Colors.orange;
       case 'inGame':
-      case 'championSelect' : // In Game
+      case 'championSelect': // In Game
         return Colors.blue;
       case 'offline':
       default:
@@ -340,7 +384,8 @@ class Friend {
       if (lol.gameQueue != null) {
         queueName = lol.gameQueue!.shortName;
       }
-      availabilityText = "in $queueName (${lol.partyNbPlayers}/${lol.partyMaxPlayer})";
+      availabilityText =
+          "in $queueName (${lol.partyNbPlayers}/${lol.partyMaxPlayer})";
     }
 
     return Row(
@@ -385,7 +430,10 @@ class Friend {
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
-            if (lol.partyId != "" && !lol.summoners.contains(int.parse(BetterClientApi.instance.summonerId!)))
+            if (lol.partyId != "" &&
+                !lol.summoners.contains(
+                  int.parse(BetterClientApi.instance.summonerId!),
+                ))
               ElevatedButton(
                 onPressed: () {
                   BetterClientApi.instance.joinLobby(lol.partyId);
@@ -400,5 +448,34 @@ class Friend {
         // 🟢 Flexible Text to prevent overflow
       ],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'availability': availability,
+      'displayGroupId': displayGroupId,
+      'displayGroupName': displayGroupName,
+      'gameName': gameName,
+      'gameTag': gameTag,
+      'groupId': groupId,
+      'groupName': groupName,
+      'icon': icon,
+      'id': id,
+      'isP2PConversationMuted': isP2PConversationMuted,
+      'lastSeenOnlineTimestamp': lastSeenOnlineTimestamp,
+      'lol': lol.toJson(),
+      'name': name,
+      'note': note,
+      'patchline': patchline,
+      'pid': pid,
+      'platformId': platformId,
+      'product': product,
+      'productName': productName,
+      'puuid': puuid,
+      'statusMessage': statusMessage,
+      'summary': summary,
+      'summonerId': summonerId,
+      'time': time,
+    };
   }
 }

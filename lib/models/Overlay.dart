@@ -1,12 +1,8 @@
-
-
-
 class Overlay {
   String centeredLCOverLayPath;
   String socialCardLCOverlayPath;
   String titleLCOverlayPath;
   String uncenteredLCOverlayPath;
-
 
   Overlay({
     required this.centeredLCOverLayPath,
@@ -22,5 +18,14 @@ class Overlay {
       titleLCOverlayPath: json['titleLCOverlayPath'] ?? '',
       uncenteredLCOverlayPath: json['uncenteredLCOverlayPath'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'centeredLCOverLayPath': centeredLCOverLayPath,
+      'socialCardLCOverlayPath': socialCardLCOverlayPath,
+      'titleLCOverlayPath': titleLCOverlayPath,
+      'uncenteredLCOverlayPath': uncenteredLCOverlayPath,
+    };
   }
 }

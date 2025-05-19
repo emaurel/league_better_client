@@ -1,5 +1,3 @@
-
-
 import 'package:league_better_client/models/SkinAugments.dart';
 
 import 'Ownership.dart';
@@ -16,7 +14,6 @@ class Chroma {
   SkinAugments skinAugments;
   bool stillObtainable;
 
-
   Chroma({
     required this.championId,
     required this.chromaPath,
@@ -29,7 +26,6 @@ class Chroma {
     required this.skinAugments,
     required this.stillObtainable,
   });
-
 
   factory Chroma.fromJson(Map<String, dynamic> json) {
     return Chroma(
@@ -44,5 +40,20 @@ class Chroma {
       skinAugments: SkinAugments.fromJson(json['skinAugments']),
       stillObtainable: json['stillObtainable'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'championId': championId,
+      'chromaPath': chromaPath,
+      'colors': colors,
+      'disabled': disabled,
+      'id': id,
+      'lastSelected': lastSelected,
+      'name': name,
+      'ownership': ownership.toJson(),
+      'skinAugments': skinAugments.toJson(),
+      'stillObtainable': stillObtainable,
+    };
   }
 }

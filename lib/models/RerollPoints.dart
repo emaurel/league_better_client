@@ -1,4 +1,3 @@
-
 class RerollPoints {
   int currentPoints;
   int maxRolls;
@@ -34,4 +33,13 @@ class RerollPoints {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'currentPoints': currentPoints,
+      'maxRolls': maxRolls,
+      'numberOfRolls': numberOfRolls,
+      'pointsCostToRoll': pointsCostToRoll,
+      'pointsToReroll': pointsToReroll,
+    };
+  }
 }

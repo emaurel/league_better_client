@@ -14,4 +14,11 @@ class Augment {
       ),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'contentId': contentId,
+      'overlays': overlays.map((o) => o.toJson()).toList(),
+    };
+  }
 }

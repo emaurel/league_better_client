@@ -1,12 +1,7 @@
-
-
-
-
 import 'package:league_better_client/models/DodgeData.dart';
 import 'package:league_better_client/models/LowPriorityData.dart';
 import 'package:league_better_client/models/MatchmakingSearchError.dart';
 import 'package:league_better_client/models/ReadyCheck.dart';
-
 
 enum MatchmakingSearchState {
   searching,
@@ -70,29 +65,48 @@ class MatchmakingSearch {
 
   factory MatchmakingSearch.fromJson(Map<String, dynamic> json) {
     return MatchmakingSearch(
-      dodgeData: json['dodgeData'] != null
-          ? DodgeData.fromJson(json['dodgeData'])
-          : null,
-      errors: json['errors'] != null
-          ? (json['errors'] as List)
-              .map((e) => MatchmakingSearchError.fromJson(e))
-              .toList()
-          : null,
+      dodgeData:
+          json['dodgeData'] != null
+              ? DodgeData.fromJson(json['dodgeData'])
+              : null,
+      errors:
+          json['errors'] != null
+              ? (json['errors'] as List)
+                  .map((e) => MatchmakingSearchError.fromJson(e))
+                  .toList()
+              : null,
       estimatedQueueTime: json['estimatedQueueTime']?.toDouble(),
       isCurrentlyInQueue: json['isCurrentlyInQueue'],
       lobbyId: json['lobbyId'],
-      lowPriorityData: json['lowPriorityData'] != null
-          ? LowPriorityData.fromJson(json['lowPriorityData'])
-          : null,
+      lowPriorityData:
+          json['lowPriorityData'] != null
+              ? LowPriorityData.fromJson(json['lowPriorityData'])
+              : null,
       queueId: json['queueId'],
-      readyCheck: json['readyCheck'] != null
-          ? ReadyCheck.fromJson(json['readyCheck'])
-          : null,
+      readyCheck:
+          json['readyCheck'] != null
+              ? ReadyCheck.fromJson(json['readyCheck'])
+              : null,
       searchState: MatchmakingSearchState.values.firstWhere(
         (e) => e.name == json['searchState'],
         orElse: () => MatchmakingSearchState.searching,
       ),
       timeInQueue: json['timeInQueue']?.toDouble() ?? 0.0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'dodgeData': dodgeData?.toJson(),
+      'errors': errors?.map((e) => e.toJson()).toList(),
+      'estimatedQueueTime': estimatedQueueTime,
+      'isCurrentlyInQueue': isCurrentlyInQueue,
+      'lobbyId': lobbyId,
+      'lowPriorityData': lowPriorityData?.toJson(),
+      'queueId': queueId,
+      'readyCheck': readyCheck?.toJson(),
+      'searchState': searchState.name,
+      'timeInQueue': timeInQueue,
+    };
   }
 }

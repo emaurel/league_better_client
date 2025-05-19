@@ -19,4 +19,13 @@ class QueueRewards {
       partySizeIpRewards: json['partySizeIpRewards'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'isChampionPointsEnabled': isChampionPointsEnabled,
+      'usIpEnabled': usIpEnabled,
+      'isXpEnabled': isXpEnabled,
+      'partySizeIpRewards': partySizeIpRewards,
+    };
+  }
 }

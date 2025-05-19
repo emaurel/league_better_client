@@ -61,6 +61,26 @@ class ChampSelectChampion {
   Future<void> loadImage() async {
     image = await BetterClientApi().getImageFromPath(squarePortraitPath);
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'disabled': disabled,
+      'freeToPlay': freeToPlay,
+      'freeToPlayForQueue': freeToPlayForQueue,
+      'id': id,
+      'loyaltyReward': loyaltyReward,
+      'masteryLevel': masteryLevel,
+      'masteryPoints': masteryPoints,
+      'name': name,
+      'owned': owned,
+      'positionsFavorited': positionsFavorited,
+      'rented': rented,
+      'roles': roles,
+      'selectionStatus': selectionStatus.toJson(),
+      'squarePortraitPath': squarePortraitPath,
+      'xboxGPReward': xboxGPReward,
+    };
+  }
 }
 
 class SelectionStatus {
@@ -95,5 +115,18 @@ class SelectionStatus {
       pickedByOtherOrBanned: json['pickedByOtherOrBanned'],
       selectedByMe: json['selectedByMe'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'banIntented': banIntented,
+      'banIntentedByMe': banIntentedByMe,
+      'isBanned': isBanned,
+      'pickIntented': pickIntented,
+      'pickIntentedByMe': pickIntentedByMe,
+      'pickIntentedPosition': pickIntentedPosition,
+      'pickedByOtherOrBanned': pickedByOtherOrBanned,
+      'selectedByMe': selectedByMe,
+    };
   }
 }

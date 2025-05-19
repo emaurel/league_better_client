@@ -59,6 +59,7 @@ class _ChampSelectPageState extends State<ChampSelectPage> {
       "OnJsonApiEvent_lol-champ-select_v1_session",
     );
     _champSelectWebSocket.listen((event) {
+      eventBus.fire(ChampSelectStartEvent());
       final allEventData = jsonDecode(event);
       final eventData = allEventData[2];
       final data = eventData["data"];

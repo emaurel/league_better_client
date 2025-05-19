@@ -1,5 +1,3 @@
-
-
 class LowPriorityData {
   String? bustedLeaveAccessToken;
   List<int>? penalizedSummonerIds;
@@ -18,12 +16,23 @@ class LowPriorityData {
   factory LowPriorityData.fromJson(Map<String, dynamic> json) {
     return LowPriorityData(
       bustedLeaveAccessToken: json['bustedLeaveAccessToken'],
-      penalizedSummonerIds: json['penalizedSummonerIds'] != null
-          ? List<int>.from(json['penalizedSummonerIds'])
-          : null,
+      penalizedSummonerIds:
+          json['penalizedSummonerIds'] != null
+              ? List<int>.from(json['penalizedSummonerIds'])
+              : null,
       penaltyTime: json['penaltyTime']?.toDouble(),
       penaltyTimeRemaining: json['penaltyTimeRemaining']?.toDouble(),
       reason: json['reason'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'bustedLeaveAccessToken': bustedLeaveAccessToken,
+      'penalizedSummonerIds': penalizedSummonerIds,
+      'penaltyTime': penaltyTime,
+      'penaltyTimeRemaining': penaltyTimeRemaining,
+      'reason': reason,
+    };
   }
 }

@@ -261,6 +261,7 @@ class _LobbyPageState extends State<LobbyPage> {
                 onPressed: () {
                   BetterClientApi.instance.acceptGame();
                   eventBus.fire(MatchmakingStopEvent());
+                  eventBus.fire(ChampSelectStartEvent());
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(

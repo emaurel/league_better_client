@@ -69,11 +69,15 @@ class ChampSelect {
 
   factory ChampSelect.fromJson(Map<String, dynamic> json) {
     return ChampSelect(
-      actions: (json['actions'] as List)
-          .map((innerList) => (innerList as List)
-              .map((item) => Action.fromJson(item))
-              .toList())
-          .toList(),
+      actions:
+          (json['actions'] as List)
+              .map(
+                (innerList) =>
+                    (innerList as List)
+                        .map((item) => Action.fromJson(item))
+                        .toList(),
+              )
+              .toList(),
       allowBattleBoost: json['allowBattleBoost'],
       allowDuplicatePicks: json['allowDuplicatePicks'],
       allowLockedEvents: json['allowLockedEvents'],
@@ -95,8 +99,7 @@ class ChampSelect {
       isSpectating: json['isSpectating'],
       localPlayerCellId: json['localPlayerCellId'],
       lockedEventIndex: json['lockedEventIndex'],
-      myTeam:
-          (json['myTeam'] as List).map((e) => Player.fromJson(e)).toList(),
+      myTeam: (json['myTeam'] as List).map((e) => Player.fromJson(e)).toList(),
       pickOrderSwaps: json['pickOrderSwaps'],
       positionSwaps: json['positionSwaps'],
       rerollsRemaining: json['rerollsRemaining'],
@@ -106,6 +109,47 @@ class ChampSelect {
       timer: Timer.fromJson(json['timer']),
       trades: json['trades'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'actions':
+          actions
+              .map(
+                (innerList) => innerList.map((item) => item.toJson()).toList(),
+              )
+              .toList(),
+      'allowBattleBoost': allowBattleBoost,
+      'allowDuplicatePicks': allowDuplicatePicks,
+      'allowLockedEvents': allowLockedEvents,
+      'allowRerolling': allowRerolling,
+      'allowSkinSelection': allowSkinSelection,
+      'allowSubsetChampionPicks': allowSubsetChampionPicks,
+      'bans': bans.toJson(),
+      'benchChampions': benchChampions,
+      'benchEnabled': benchEnabled,
+      'boostableSkinCount': boostableSkinCount,
+      'chatDetails': chatDetails.toJson(),
+      'counter': counter,
+      'gameId': gameId,
+      'hasSimultaneousBans': hasSimultaneousBans,
+      'hasSimultaneousPicks': hasSimultaneousPicks,
+      'id': id,
+      'isCustomGame': isCustomGame,
+      'isLegacyChampSelect': isLegacyChampSelect,
+      'isSpectating': isSpectating,
+      'localPlayerCellId': localPlayerCellId,
+      'lockedEventIndex': lockedEventIndex,
+      'myTeam': myTeam.map((e) => e.toJson()).toList(),
+      'pickOrderSwaps': pickOrderSwaps,
+      'positionSwaps': positionSwaps,
+      'rerollsRemaining': rerollsRemaining,
+      'showQuitButton': showQuitButton,
+      'skipChampionSelect': skipChampionSelect,
+      'theirTeam': theirTeam,
+      'timer': timer.toJson(),
+      'trades': trades,
+    };
   }
 }
 
@@ -167,6 +211,19 @@ class Action {
       type: ActionType.fromString(json['type']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'actorCellId': actorCellId,
+      'championId': championId,
+      'completed': completed,
+      'id': id,
+      'isAllyAction': isAllyAction,
+      'isInProgress': isInProgress,
+      'pickTurn': pickTurn,
+      'type': type.value,
+    };
+  }
 }
 
 class Bans {
@@ -187,6 +244,14 @@ class Bans {
       theirTeamBans: json['theirTeamBans'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'myTeamBans': myTeamBans,
+      'numBans': numBans,
+      'theirTeamBans': theirTeamBans,
+    };
+  }
 }
 
 class ChatDetails {
@@ -206,6 +271,14 @@ class ChatDetails {
       multiUserChatId: json['multiUserChatId'],
       multiUserChatPassword: json['multiUserChatPassword'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'mucJwtDto': mucJwtDto.toJson(),
+      'multiUserChatId': multiUserChatId,
+      'multiUserChatPassword': multiUserChatPassword,
+    };
   }
 }
 
@@ -284,6 +357,33 @@ class Player {
       wardSkinId: json['wardSkinId'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'assignedPosition': assignedPosition,
+      'cellId': cellId,
+      'championId': championId,
+      'championPickIntent': championPickIntent,
+      'gameName': gameName,
+      'internalName': internalName,
+      'isHumanoid': isHumanoid,
+      'nameVisibilityType': nameVisibilityType,
+      'obfuscatedPuuid': obfuscatedPuuid,
+      'obfuscatedSummonerId': obfuscatedSummonerId,
+      'pickMode': pickMode,
+      'pickTurn': pickTurn,
+      'playerAlias': playerAlias,
+      'playerType': playerType,
+      'puuid': puuid,
+      'selectedSkinId': selectedSkinId,
+      'spell1Id': spell1Id,
+      'spell2Id': spell2Id,
+      'summonerId': summonerId,
+      'tagLine': tagLine,
+      'team': team,
+      'wardSkinId': wardSkinId,
+    };
+  }
 }
 
 class Timer {
@@ -309,5 +409,15 @@ class Timer {
       phase: json['phase'],
       totalTimeInPhase: json['totalTimeInPhase'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'adjustedTimeLeftInPhase': adjustedTimeLeftInPhase,
+      'internalNowInEpochMs': internalNowInEpochMs,
+      'isInfinite': isInfinite,
+      'phase': phase,
+      'totalTimeInPhase': totalTimeInPhase,
+    };
   }
 }

@@ -16,4 +16,8 @@ class TacticalInfo {
       style: json['style'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {'damageType': damageType, 'difficulty': difficulty, 'style': style};
+  }
 }

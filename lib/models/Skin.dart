@@ -1,9 +1,8 @@
-
-
 import 'package:league_better_client/models/SkinAugments.dart';
 
 import 'Chroma.dart';
 import 'Ownership.dart';
+
 class Skin {
   int championId;
   String? chromasPath;
@@ -25,7 +24,6 @@ class Skin {
   bool stillOptainable;
   String tilePath;
   String uncensoredSplashPath;
-
 
   Skin({
     required this.championId,
@@ -49,7 +47,6 @@ class Skin {
     required this.tilePath,
     required this.uncensoredSplashPath,
   });
-
 
   factory Skin.fromJson(Map<String, dynamic> json) {
     return Skin(
@@ -76,5 +73,29 @@ class Skin {
       tilePath: json['tilePath'] ?? '',
       uncensoredSplashPath: json['uncensoredSplashPath'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'championId': championId,
+      'chromasPath': chromasPath,
+      'chromas': chromas.map((c) => c.toJson()).toList(),
+      'collectionSplashPath': collectionSplashPath,
+      'disabled': disabled,
+      'emblems': emblems,
+      'featuresText': featuresText,
+      'id': id,
+      'isBase': isBase,
+      'lastSelected': lastSelected,
+      'loadScreenPath': loadScreenPath,
+      'name': name,
+      'ownership': ownership.toJson(),
+      'skinAugments': skinAugments.toJson(),
+      'splashPath': splashPath,
+      'splashVideoPath': splashVideoPath,
+      'stillOptainable': stillOptainable,
+      'tilePath': tilePath,
+      'uncensoredSplashPath': uncensoredSplashPath,
+    };
   }
 }

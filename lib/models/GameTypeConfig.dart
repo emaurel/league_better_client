@@ -73,4 +73,31 @@ class GameTypeConfig {
       teamChampionPool: json['teamChampionPool'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'advancedLearningQuests': advancedLearningQuests,
+      'allowTrades': allowTrades,
+      'banMode': banMode,
+      'banTimerDuration': banTimerDuration,
+      'battleBoost': battleBoost,
+      'crossTeamChampionPool': crossTeamChampionPool,
+      'deathMatch': deathMatch,
+      'doNotRemove': doNotRemove,
+      'duplicatePick': duplicatePick,
+      'exclusivePick': exclusivePick,
+      'gameModeOverride': gameModeOverride,
+      'id': id,
+      'learningQuests': learningQuests,
+      'mainPickTimerDuration': mainPickTimerDuration,
+      'maxAllowableBans': maxAllowableBans,
+      'name': name,
+      'numPlayerPerTeamOverride': numPlayerPerTeamOverride,
+      'onboardCoopBegineer': onboardCoopBegineer,
+      'pickMode': pickMode,
+      'postPickTimerDuration': postPickTimerDuration,
+      'reroll': reroll,
+      'teamChampionPool': teamChampionPool,
+    };
+  }
 }

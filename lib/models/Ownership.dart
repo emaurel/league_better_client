@@ -1,4 +1,3 @@
-
 import 'Rental.dart';
 
 class Ownership {
@@ -21,5 +20,14 @@ class Ownership {
       rental: Rental.fromJson(json['rental']),
       xboxGPReward: json['xboxGPReward'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'loyalyReward': loyalyReward,
+      'owned': owned,
+      'rental': rental.toJson(),
+      'xboxGPReward': xboxGPReward,
+    };
   }
 }
