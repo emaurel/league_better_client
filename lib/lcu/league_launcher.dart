@@ -14,10 +14,11 @@ import 'lockfile.dart';
 /// Windows appear at different points in the LCU's startup (patcher, splash,
 /// main UI), so the hider runs on a polling loop rather than once.
 class LeagueLauncher {
-  LeagueLauncher();
+  LeagueLauncher() {
+    if (Platform.isWindows) _startHider();
+  }
 
   Timer? _hideTimer;
-  final _hiddenHandles = <int>{};
 
   bool get isWindows => Platform.isWindows;
 
@@ -120,9 +121,11 @@ class LeagueLauncher {
   void _hideAllLeagueWindows() {
     if (!isWindows) return;
     for (final hwnd in _enumerateLeagueWindows()) {
-      if (_hiddenHandles.contains(hwnd)) continue;
-      ShowWindow(hwnd, SW_HIDE);
-      _hiddenHandles.add(hwnd);
+      // Re-hide every tick if the window has come back; League can re-show
+      // its own windows during patcher → splash → main UI transitions.
+      if (IsWindowVisible(hwnd) != 0) {
+        ShowWindow(hwnd, SW_HIDE);
+      }
     }
   }
 
