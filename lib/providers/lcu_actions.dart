@@ -101,6 +101,11 @@ class LcuActions {
   }) async {
     final s = _session;
     if (s == null) return;
+    // Drop any existing lobby first — the LCU rejects custom-lobby creation
+    // (INVALID_LOBBY) if a different-typed lobby is already open.
+    try {
+      await s.http.delete('/lol-lobby/v2/lobby');
+    } catch (_) {/* no current lobby is fine */}
     await s.http.post('/lol-lobby/v2/lobby', {
       'customGameLobby': {
         'configuration': {
