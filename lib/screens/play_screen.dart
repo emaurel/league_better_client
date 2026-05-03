@@ -86,12 +86,32 @@ const _queues = <_QueueOption>[
   ),
 ];
 
-class _QueuePicker extends ConsumerWidget {
+class _QueuePicker extends ConsumerStatefulWidget {
   const _QueuePicker();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final actions = ref.watch(lcuActionsProvider);
+  ConsumerState<_QueuePicker> createState() => _QueuePickerState();
+}
+
+class _QueuePickerState extends ConsumerState<_QueuePicker> {
+  String? _error;
+
+  Future<void> _onTap(_QueueOption q) async {
+    final actions = ref.read(lcuActionsProvider);
+    setState(() => _error = null);
+    try {
+      if (q.id == -1) {
+        await actions.createCustomLobby();
+      } else {
+        await actions.createLobby(q.id);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = '${q.name}: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -110,6 +130,16 @@ class _QueuePicker extends ConsumerWidget {
                   color: AppColors.textSecondary,
                 ),
           ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: SelectableText(
+                _error!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.negative,
+                    ),
+              ),
+            ),
           const SizedBox(height: 24),
           LayoutBuilder(
             builder: (context, c) {
@@ -127,12 +157,7 @@ class _QueuePicker extends ConsumerWidget {
                 childAspectRatio: 2.6,
                 children: [
                   for (final q in _queues)
-                    _QueueCard(
-                      option: q,
-                      onTap: () => q.id == -1
-                          ? actions.createCustomLobby()
-                          : actions.createLobby(q.id),
-                    ),
+                    _QueueCard(option: q, onTap: () => _onTap(q)),
                 ],
               );
             },

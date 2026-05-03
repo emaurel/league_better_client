@@ -87,10 +87,13 @@ class LcuActions {
   /// Create a 5v5 Summoner's Rift custom lobby with Tournament Draft rules
   /// (full pick/ban). Useful for testing champ select without queuing.
   ///
-  /// Body shape mirrors what the official client sends — the LCU rejects
-  /// `gameTypeConfig` (returns INVALID_LOBBY); the right field is `mutators`.
+  /// The LCU's INVALID_LOBBY error is opaque — known requirements:
+  ///   - `configuration.mutators.id` must be a real game-type config id
+  ///     (6 = Tournament Draft, the format with full bans).
+  ///   - `gameServerRegion` must be present (empty string OK).
+  ///   - `lobbyPassword` must be a string, not null.
   Future<void> createCustomLobby({
-    String name = 'League Better Client Test',
+    String name = 'LBC Test',
     int mapId = 11,
     String gameMode = 'CLASSIC',
     int teamSize = 5,
@@ -99,7 +102,6 @@ class LcuActions {
     final s = _session;
     if (s == null) return;
     await s.http.post('/lol-lobby/v2/lobby', {
-      'isCustom': true,
       'customGameLobby': {
         'configuration': {
           'gameMode': gameMode,
@@ -111,8 +113,9 @@ class LcuActions {
           'teamSize': teamSize,
         },
         'lobbyName': name,
-        'lobbyPassword': null,
+        'lobbyPassword': '',
       },
+      'isCustom': true,
     });
   }
 
