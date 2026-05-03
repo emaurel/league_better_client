@@ -23,20 +23,31 @@ class LeagueLauncher {
 
   /// Locate `LeagueClient.exe` on disk. Returns null if not found.
   String? findExecutable() {
-    if (LcuPaths.leagueClientExeOverride != null) {
-      final f = File(LcuPaths.leagueClientExeOverride!);
-      if (f.existsSync()) return f.path;
-    }
-    for (final root in LcuPaths.installRoots()) {
-      final exe = p.join(root, 'LeagueClient.exe');
-      if (File(exe).existsSync()) return exe;
+    for (final candidate in candidateExePaths()) {
+      if (File(candidate).existsSync()) return candidate;
     }
     return null;
   }
 
-  /// Returns true if any LeagueClient.exe is already running.
+  /// All paths the launcher will probe, in order. Useful for diagnostics.
+  List<String> candidateExePaths() {
+    final out = <String>[];
+    if (LcuPaths.leagueClientExeOverride != null) {
+      out.add(LcuPaths.leagueClientExeOverride!);
+    }
+    for (final root in LcuPaths.installRoots()) {
+      out.add(p.join(root, 'LeagueClient.exe'));
+    }
+    return out;
+  }
+
+  /// Returns true if any LeagueClient.exe is already running. Uses the
+  /// lockfile (most reliable signal) and falls back to window enumeration.
   bool isAlreadyRunning() {
     if (!isWindows) return false;
+    for (final path in Lockfile.candidatePaths()) {
+      if (File(path).existsSync()) return true;
+    }
     return _enumerateLeagueWindows().isNotEmpty;
   }
 

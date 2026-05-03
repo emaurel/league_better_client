@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../lcu/lcu_connector.dart';
+import '../lcu/lockfile.dart';
 import '../providers/lcu_providers.dart';
 import '../theme/app_colors.dart';
 import '../theme/league_decorations.dart';
@@ -18,11 +20,13 @@ class ConnectingScreen extends ConsumerStatefulWidget {
 class _ConnectingScreenState extends ConsumerState<ConnectingScreen> {
   bool _launching = false;
   String? _launchError;
+  String? _launchInfo;
 
   Future<void> _launch() async {
     setState(() {
       _launching = true;
       _launchError = null;
+      _launchInfo = null;
     });
     try {
       final launcher = ref.read(leagueLauncherProvider);
@@ -30,23 +34,54 @@ class _ConnectingScreenState extends ConsumerState<ConnectingScreen> {
       if (exe == null) {
         setState(() {
           _launchError =
-              'LeagueClient.exe not found. Set the install path in Settings.';
+              'LeagueClient.exe not found at any default location. '
+              'Click "Choose LeagueClient.exe…" below to point at it manually.';
         });
         return;
       }
       final ok = await launcher.launchAndHide();
       if (!ok && mounted) {
-        setState(() => _launchError = 'Failed to launch LeagueClient.exe.');
+        setState(() => _launchError = 'Failed to launch $exe.');
+      } else if (mounted) {
+        setState(() => _launchInfo = 'Started: $exe');
       }
     } finally {
       if (mounted) setState(() => _launching = false);
     }
   }
 
+  Future<void> _pickExe() async {
+    final result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Locate LeagueClient.exe',
+      type: FileType.custom,
+      allowedExtensions: const ['exe'],
+      lockParentWindow: true,
+    );
+    final picked = result?.files.single.path;
+    if (picked == null) return;
+    if (!picked.toLowerCase().endsWith('leagueclient.exe')) {
+      setState(() {
+        _launchError = 'That file is not LeagueClient.exe.';
+      });
+      return;
+    }
+    await LcuPaths.setLeagueClientExe(picked);
+    if (!mounted) return;
+    setState(() {
+      _launchError = null;
+      _launchInfo = 'Saved: $picked';
+    });
+    await _launch();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(lcuConnectionStateProvider).valueOrNull;
     final status = state?.status ?? LcuStatus.idle;
+    final launcher = ref.watch(leagueLauncherProvider);
+    final candidates = launcher.candidateExePaths();
+    final foundExe = launcher.findExecutable();
+
     final message = switch (status) {
       LcuStatus.searching => 'Searching for League client…',
       LcuStatus.connecting => 'Establishing session…',
@@ -60,8 +95,8 @@ class _ConnectingScreenState extends ConsumerState<ConnectingScreen> {
       backgroundColor: AppColors.hextechBlack,
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 540),
-          child: Padding(
+          constraints: const BoxConstraints(maxWidth: 620),
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(32),
             child: LeaguePanel(
               title: 'League Better Client',
@@ -90,20 +125,45 @@ class _ConnectingScreenState extends ConsumerState<ConnectingScreen> {
                     ),
                   const LeagueDivider(),
                   Text(
-                    'The League client must be running for this app to function. '
-                    'You can let us start it for you — its window will be hidden.',
+                    foundExe == null
+                        ? 'LeagueClient.exe was not found at any default location.'
+                        : 'Found LeagueClient.exe at:\n$foundExe',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: foundExe == null
+                              ? AppColors.warn
+                              : AppColors.textSecondary,
                         ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _launching ? null : _launch,
-                    child: Text(
-                      _launching ? 'LAUNCHING…' : 'LAUNCH LEAGUE CLIENT',
-                    ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _launching ? null : _launch,
+                        child: Text(
+                          _launching ? 'LAUNCHING…' : 'LAUNCH LEAGUE CLIENT',
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: _launching ? null : _pickExe,
+                        child: const Text('CHOOSE LEAGUECLIENT.EXE…'),
+                      ),
+                    ],
                   ),
+                  if (_launchInfo != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        _launchInfo!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.online,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   if (_launchError != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -115,7 +175,36 @@ class _ConnectingScreenState extends ConsumerState<ConnectingScreen> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 16),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.symmetric(vertical: 8),
+                    iconColor: AppColors.gold,
+                    collapsedIconColor: AppColors.goldMid,
+                    title: Text(
+                      'PATHS CHECKED (${candidates.length})',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            letterSpacing: 1.6,
+                            color: AppColors.gold,
+                          ),
+                    ),
+                    children: [
+                      for (final path in candidates)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: SelectableText(
+                            path,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontFamily: 'Consolas',
+                                ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -193,7 +282,6 @@ class _HexPainter extends CustomPainter {
         ..color = AppColors.goldMid.withValues(alpha: 0.6),
     );
 
-    // Rotating arc on outer hex.
     final start = progress * 2 * math.pi;
     const sweep = 1.2;
     canvas.drawArc(
