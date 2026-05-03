@@ -86,29 +86,32 @@ class LcuActions {
 
   /// Create a 5v5 Summoner's Rift custom lobby with Tournament Draft rules
   /// (full pick/ban). Useful for testing champ select without queuing.
+  ///
+  /// Body shape mirrors what the official client sends — the LCU rejects
+  /// `gameTypeConfig` (returns INVALID_LOBBY); the right field is `mutators`.
   Future<void> createCustomLobby({
     String name = 'League Better Client Test',
     int mapId = 11,
     String gameMode = 'CLASSIC',
     int teamSize = 5,
-    int gameTypeConfigId = 1,
+    int mutatorId = 1,
   }) async {
     final s = _session;
     if (s == null) return;
     await s.http.post('/lol-lobby/v2/lobby', {
-      'queueId': -1,
       'isCustom': true,
       'customGameLobby': {
         'configuration': {
-          'mapId': mapId,
           'gameMode': gameMode,
           'gameMutator': '',
-          'gameTypeConfig': {'id': gameTypeConfigId},
+          'gameServerRegion': '',
+          'mapId': mapId,
+          'mutators': {'id': mutatorId},
           'spectatorPolicy': 'AllAllowed',
           'teamSize': teamSize,
         },
         'lobbyName': name,
-        'lobbyPassword': '',
+        'lobbyPassword': null,
       },
     });
   }
