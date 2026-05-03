@@ -83,6 +83,103 @@ class LcuActions {
       'secondPreference': second,
     });
   }
+
+  /// Create a 5v5 Summoner's Rift custom lobby with Tournament Draft rules
+  /// (full pick/ban). Useful for testing champ select without queuing.
+  Future<void> createCustomLobby({
+    String name = 'League Better Client Test',
+    int mapId = 11,
+    String gameMode = 'CLASSIC',
+    int teamSize = 5,
+    int gameTypeConfigId = 1,
+  }) async {
+    final s = _session;
+    if (s == null) return;
+    await s.http.post('/lol-lobby/v2/lobby', {
+      'queueId': -1,
+      'isCustom': true,
+      'customGameLobby': {
+        'configuration': {
+          'mapId': mapId,
+          'gameMode': gameMode,
+          'gameMutator': '',
+          'gameTypeConfig': {'id': gameTypeConfigId},
+          'spectatorPolicy': 'AllAllowed',
+          'teamSize': teamSize,
+        },
+        'lobbyName': name,
+        'lobbyPassword': '',
+      },
+    });
+  }
+
+  /// Returns the bot champion roster the LCU offers for the current custom
+  /// lobby's map. Each entry: `{ id, name, botDifficulties: [...] }`.
+  Future<List<Map<String, dynamic>>> availableBots() async {
+    final s = _session;
+    if (s == null) return const [];
+    try {
+      final raw = await s.http.get('/lol-lobby/v2/lobby/custom/available-bots');
+      if (raw is List) {
+        return raw.whereType<Map<String, dynamic>>().toList();
+      }
+    } catch (_) {/* ignore */}
+    return const [];
+  }
+
+  /// Add one bot to the given team. `teamId` must be `"100"` (allies/blue)
+  /// or `"200"` (enemies/red). Picks the first available champion at the
+  /// requested difficulty (clamped to what the LCU advertises).
+  Future<void> addBot({
+    required String teamId,
+    String difficulty = 'MEDIUM',
+  }) async {
+    final s = _session;
+    if (s == null) return;
+    final bots = await availableBots();
+    if (bots.isEmpty) return;
+    final pick = bots.first;
+    final difficulties = (pick['botDifficulties'] as List?)
+            ?.whereType<String>()
+            .toList() ??
+        const ['MEDIUM'];
+    final chosen = difficulties.contains(difficulty)
+        ? difficulty
+        : difficulties.first;
+    await s.http.post('/lol-lobby/v1/lobby/custom/bots', {
+      'championId': pick['id'],
+      'botDifficulty': chosen,
+      'teamId': teamId,
+    });
+  }
+
+  /// Add bots to both teams until each side reaches [teamSize]. Counts the
+  /// human members already on each side.
+  Future<void> fillCustomLobbyWithBots({int teamSize = 5}) async {
+    final s = _session;
+    if (s == null) return;
+    final lobbyRaw = await s.http.get('/lol-lobby/v2/lobby');
+    if (lobbyRaw is! Map<String, dynamic>) return;
+    final teamOne = (lobbyRaw['teamOne'] as List?)?.length ?? 0;
+    final teamTwo = (lobbyRaw['teamTwo'] as List?)?.length ?? 0;
+
+    final allyMissing = (teamSize - teamOne).clamp(0, teamSize);
+    final enemyMissing = (teamSize - teamTwo).clamp(0, teamSize);
+
+    for (var i = 0; i < allyMissing; i++) {
+      await addBot(teamId: '100');
+    }
+    for (var i = 0; i < enemyMissing; i++) {
+      await addBot(teamId: '200');
+    }
+  }
+
+  /// Move from a custom lobby into champion select.
+  Future<void> startCustomChampSelect() async {
+    final s = _session;
+    if (s == null) return;
+    await s.http.post('/lol-lobby/v1/lobby/custom/start-champ-select');
+  }
 }
 
 final lcuActionsProvider = Provider<LcuActions>((ref) {

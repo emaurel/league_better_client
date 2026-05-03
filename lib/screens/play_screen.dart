@@ -77,6 +77,13 @@ const _queues = <_QueueOption>[
     description: 'Rings of Wrath · 2v2v2v2',
     icon: Icons.flash_on_outlined,
   ),
+  // Sentinel id for "Custom Game" — handled separately by the picker.
+  _QueueOption(
+    id: -1,
+    name: 'Custom Game',
+    description: 'Summoner\'s Rift · 5v5 Tournament Draft · No matchmaking',
+    icon: Icons.science_outlined,
+  ),
 ];
 
 class _QueuePicker extends ConsumerWidget {
@@ -122,7 +129,9 @@ class _QueuePicker extends ConsumerWidget {
                   for (final q in _queues)
                     _QueueCard(
                       option: q,
-                      onTap: () => actions.createLobby(q.id),
+                      onTap: () => q.id == -1
+                          ? actions.createCustomLobby()
+                          : actions.createLobby(q.id),
                     ),
                 ],
               );

@@ -7,16 +7,40 @@ import '../providers/lobby_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/league_decorations.dart';
 
-class LobbyScreen extends ConsumerWidget {
+class LobbyScreen extends ConsumerStatefulWidget {
   const LobbyScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LobbyScreen> createState() => _LobbyScreenState();
+}
+
+class _LobbyScreenState extends ConsumerState<LobbyScreen> {
+  bool _busy = false;
+  String? _statusLine;
+
+  Future<void> _run(Future<void> Function() op, String runningLabel) async {
+    setState(() {
+      _busy = true;
+      _statusLine = runningLabel;
+    });
+    try {
+      await op();
+      if (mounted) setState(() => _statusLine = null);
+    } catch (e) {
+      if (mounted) setState(() => _statusLine = 'Error: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lobby = ref.watch(lobbyProvider).valueOrNull;
     if (lobby == null) {
       return const Center(child: CircularProgressIndicator());
     }
     final actions = ref.watch(lcuActionsProvider);
+    final isCustom = lobby.gameConfig.isCustom;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
@@ -34,19 +58,88 @@ class LobbyScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: lobby.canStartActivity ? actions.startMatchmaking : null,
-                child: const Text('FIND MATCH'),
+          if (isCustom)
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                ElevatedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _run(
+                            () async {
+                              await actions
+                                  .fillCustomLobbyWithBots(teamSize: 5);
+                              await Future.delayed(
+                                const Duration(milliseconds: 600),
+                              );
+                              await actions.startCustomChampSelect();
+                            },
+                            'Filling bots and starting champ select…',
+                          ),
+                  child: const Text('FILL & START CHAMP SELECT'),
+                ),
+                OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _run(
+                            () => actions.addBot(teamId: '100'),
+                            'Adding ally bot…',
+                          ),
+                  child: const Text('ADD ALLY BOT'),
+                ),
+                OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _run(
+                            () => actions.addBot(teamId: '200'),
+                            'Adding enemy bot…',
+                          ),
+                  child: const Text('ADD ENEMY BOT'),
+                ),
+                OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _run(
+                            actions.startCustomChampSelect,
+                            'Starting champ select…',
+                          ),
+                  child: const Text('START CHAMP SELECT'),
+                ),
+                OutlinedButton(
+                  onPressed: _busy ? null : actions.leaveLobby,
+                  child: const Text('LEAVE LOBBY'),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: lobby.canStartActivity
+                      ? actions.startMatchmaking
+                      : null,
+                  child: const Text('FIND MATCH'),
+                ),
+                const SizedBox(width: 16),
+                OutlinedButton(
+                  onPressed: actions.leaveLobby,
+                  child: const Text('LEAVE LOBBY'),
+                ),
+              ],
+            ),
+          if (_statusLine != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text(
+                _statusLine!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _statusLine!.startsWith('Error')
+                          ? AppColors.negative
+                          : AppColors.gold,
+                    ),
               ),
-              const SizedBox(width: 16),
-              OutlinedButton(
-                onPressed: actions.leaveLobby,
-                child: const Text('LEAVE LOBBY'),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );

@@ -10,11 +10,31 @@ import '../theme/app_colors.dart';
 import '../theme/league_decorations.dart';
 import '../widgets/lcu_image.dart';
 
-class ChampSelectScreen extends ConsumerWidget {
+class ChampSelectScreen extends ConsumerStatefulWidget {
   const ChampSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChampSelectScreen> createState() => _ChampSelectScreenState();
+}
+
+class _ChampSelectScreenState extends ConsumerState<ChampSelectScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // The LCU's static asset endpoint is sometimes empty until login
+    // completes. If our cached champion list is empty when we enter champ
+    // select, force a re-fetch.
+    Future.microtask(() {
+      if (!mounted) return;
+      final cached = ref.read(championsProvider).valueOrNull ?? const {};
+      if (cached.isEmpty) {
+        ref.invalidate(championsProvider);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(champSelectProvider).valueOrNull;
     final champs = ref.watch(championsProvider).valueOrNull ?? const {};
 
@@ -301,6 +321,7 @@ class _ChampionPickerState extends ConsumerState<_ChampionPicker> {
   @override
   Widget build(BuildContext context) {
     final actions = ref.watch(lcuActionsProvider);
+    final asyncChamps = ref.watch(championsProvider);
     final list = widget.champs.values
         .where((c) =>
             _query.isEmpty ||
@@ -315,6 +336,73 @@ class _ChampionPickerState extends ConsumerState<_ChampionPicker> {
     final hoveredId = widget.localPlayer?.championId == 0
         ? widget.localPlayer?.championPickIntent ?? 0
         : widget.localPlayer?.championId ?? 0;
+
+    final Widget gridArea;
+    if (list.isEmpty && asyncChamps.isLoading) {
+      gridArea = const Center(child: CircularProgressIndicator());
+    } else if (list.isEmpty && asyncChamps.hasError) {
+      gridArea = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Failed to load champion list:\n${asyncChamps.error}',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.negative,
+                ),
+          ),
+        ),
+      );
+    } else if (list.isEmpty) {
+      gridArea = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _query.isEmpty
+                    ? 'No champions returned by the LCU yet.\nThe asset list is sometimes only available after login finishes.'
+                    : 'No matches for "$_query".',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+              if (_query.isEmpty) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => ref.invalidate(championsProvider),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('RELOAD'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    } else {
+      gridArea = GridView.builder(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 80,
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          childAspectRatio: 1,
+        ),
+        itemCount: list.length,
+        itemBuilder: (_, i) {
+          final c = list[i];
+          final hovered = c.id == hoveredId;
+          return _PickerTile(
+            champion: c,
+            hovered: hovered,
+            onTap: !canAct
+                ? null
+                : () => actions.hoverChampion(action.id, c.id),
+          );
+        },
+      );
+    }
 
     return LeaguePanel(
       title: action == null
@@ -337,28 +425,7 @@ class _ChampionPickerState extends ConsumerState<_ChampionPicker> {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 80,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                childAspectRatio: 1,
-              ),
-              itemCount: list.length,
-              itemBuilder: (_, i) {
-                final c = list[i];
-                final hovered = c.id == hoveredId;
-                return _PickerTile(
-                  champion: c,
-                  hovered: hovered,
-                  onTap: !canAct
-                      ? null
-                      : () => actions.hoverChampion(action.id, c.id),
-                );
-              },
-            ),
-          ),
+          Expanded(child: gridArea),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
