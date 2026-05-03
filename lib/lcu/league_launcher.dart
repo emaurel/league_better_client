@@ -21,8 +21,14 @@ class LeagueLauncher {
 
   bool get isWindows => Platform.isWindows;
 
-  /// Locate `LeagueClient.exe` on disk. Returns null if not found.
+  /// Locate the best executable to launch. Prefers `RiotClientServices.exe`
+  /// (the top-level Riot launcher used by desktop shortcuts) over
+  /// `LeagueClient.exe` directly, since the LeagueClient binary can be
+  /// access-locked by Vanguard and refuses CreateProcess in that state.
   String? findExecutable() {
+    for (final candidate in _riotClientCandidates()) {
+      if (File(candidate).existsSync()) return candidate;
+    }
     for (final candidate in candidateExePaths()) {
       if (File(candidate).existsSync()) return candidate;
     }
@@ -38,7 +44,18 @@ class LeagueLauncher {
     for (final root in LcuPaths.installRoots()) {
       out.add(p.join(root, 'LeagueClient.exe'));
     }
+    out.addAll(_riotClientCandidates());
     return out;
+  }
+
+  List<String> _riotClientCandidates() {
+    return const [
+      r'C:\Riot Games\Riot Client\RiotClientServices.exe',
+      r'D:\Riot Games\Riot Client\RiotClientServices.exe',
+      r'E:\Riot Games\Riot Client\RiotClientServices.exe',
+      r'C:\Program Files\Riot Games\Riot Client\RiotClientServices.exe',
+      r'C:\Program Files (x86)\Riot Games\Riot Client\RiotClientServices.exe',
+    ];
   }
 
   /// Returns true if any LeagueClient.exe is already running. Uses the
@@ -51,18 +68,36 @@ class LeagueLauncher {
     return _enumerateLeagueWindows().isNotEmpty;
   }
 
-  /// Spawns LeagueClient.exe (if not already running) and starts the hider.
-  /// No-op on non-Windows platforms.
+  /// Spawns the League/Riot client (if not already running) and starts the
+  /// hider. No-op on non-Windows platforms.
+  ///
+  /// Spawns through `cmd /c start` so Windows resolves the launch the same
+  /// way it would for a desktop shortcut (ShellExecute path) — direct
+  /// CreateProcess on RiotClientServices/LeagueClient often returns
+  /// ERROR_ACCESS_DENIED because of Vanguard ACLs.
   Future<bool> launchAndHide() async {
     if (!isWindows) return false;
     if (!isAlreadyRunning()) {
       final exe = findExecutable();
       if (exe == null) return false;
-      await Process.start(
+      final isRiotClient = exe.toLowerCase().endsWith('riotclientservices.exe');
+      final args = <String>[
+        '/c',
+        'start',
+        '""',
+        '/D',
+        p.dirname(exe),
         exe,
-        const [],
-        workingDirectory: p.dirname(exe),
+        if (isRiotClient) ...const [
+          '--launch-product=league_of_legends',
+          '--launch-patchline=live',
+        ],
+      ];
+      await Process.start(
+        'cmd.exe',
+        args,
         mode: ProcessStartMode.detached,
+        runInShell: false,
       );
     }
     _startHider();

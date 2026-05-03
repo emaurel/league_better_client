@@ -39,11 +39,17 @@ class _ConnectingScreenState extends ConsumerState<ConnectingScreen> {
         });
         return;
       }
-      final ok = await launcher.launchAndHide();
-      if (!ok && mounted) {
-        setState(() => _launchError = 'Failed to launch $exe.');
-      } else if (mounted) {
-        setState(() => _launchInfo = 'Started: $exe');
+      try {
+        final ok = await launcher.launchAndHide();
+        if (!ok && mounted) {
+          setState(() => _launchError = 'Failed to launch $exe.');
+        } else if (mounted) {
+          setState(() => _launchInfo = 'Started: $exe');
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _launchError = 'Launch failed: $e');
+        }
       }
     } finally {
       if (mounted) setState(() => _launching = false);
